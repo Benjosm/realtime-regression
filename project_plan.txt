@@ -1,0 +1,69 @@
+# Realtime Learning AI Model - Development Plan
+
+## 1. Purpose & Immediate Value
+A local web app that trains a linear regression model **in real-time** as you submit data points. Instantly see how new data updates predictions—perfect for understanding online machine learning with zero setup. Users can:
+- Submit (x, y) pairs (e.g., "hours studied" → "test score")
+- Get live predictions for new inputs
+- Watch the model adapt like a self-updating calculator
+
+## 2. Key Technologies & Justifications
+- **Python + Flask**: Minimal boilerplate, works in headless Docker, no frontend framework needed
+- **scikit-learn SGDRegressor**: CPU-only compatible, supports `partial_fit` for incremental updates
+- **In-memory storage**: No persistence required for core learning flow
+*Verification*: Run `python app.py`, open browser, submit 2 data points, verify prediction changes
+
+## 3. Minimum Viable Interactions
+1. **Submit Data**: POST `/add` with `x=3&y=90` → model updates instantly
+2. **Get Prediction**: POST `/predict` with `x=4` → returns current model's estimate (e.g., `92.1`)
+3. **Reset Model**: GET `/reset` → clears all data (for quick experimentation)
+*Verification*: Submit (1,1) and (2,2), then predict x=3 → output ≈3.0
+
+## 4. File Structure & Startup
+```
+/usr/src/project/
+├── app.py            # Flask entry point
+├── requirements.txt  # Dependencies
+└── README.md         # 3-line run instructions
+```
+*Verification*: 
+```bash
+tree && python app.py  # Should show structure and launch server
+```
+
+## 5. Core Logic Plan
+- **app.py**
+  - `learner = SGDRegressor(warm_start=True)`: Incremental model
+  - `data_points = []`: In-memory storage for (x,y) history
+  - Key functions:
+    - `add_data(x: float, y: float)`: Updates model via `partial_fit`
+    - `predict(x: float) -> float`: Returns current prediction
+  *Verification*: Call `add_data(1,1)` then `predict(2)` in REPL → slope≈1
+
+## 6. Build & Run Instructions
+```bash
+pip install -r requirements.txt
+python app.py
+```
+*requirements.txt*:
+```
+flask==3.0.3
+scikit-learn==1.5.1
+```
+*Verification*: 
+1. Install succeeds without errors
+2. Server starts → "Running on http://0.0.0.0:5000"
+3. `curl -X POST http://localhost:5000/predict -d "x=5"` returns valid number
+
+## 7. Stubbing & Shortcuts
+- Fake persistence: `data_points` list resets on restart (add `# TODO: save to /tmp` comment)
+- No validation on inputs (fails gracefully with `400`)
+- Uses single-feature regression (no complex data parsing)
+*Verification*: Submit `x=abc` → returns error page (intentional for MVP)
+
+## 8. Completion Checklist
+- [ ] `app.py` runs without errors
+- [ ] Browser form submits data and shows updated prediction
+- [ ] Resetting clears model state
+- [ ] Works with 3+ data points showing clear pattern (e.g., 1→1, 2→2 → predicts 3→3)
+
+**NOT BUILT**: Authentication, database, multi-feature models, visualization (focus on core learning loop)
